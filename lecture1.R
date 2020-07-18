@@ -1,4 +1,5 @@
 #######################
+###Lecture 1###########
 ###Linear regression###
 #######################
 ###Regression methods using R basic functions###
@@ -62,12 +63,81 @@ fit3 <- lm(log(hospitalterm) ~ age * gender) #":", only interaction term
 summary(fit3)
 anova(fit2, fit3)
 #####One-way ANOVA######
+##Equal variance
 tapply(hospitalterm, factor(hospital), mean)
 tapply(hospitalterm, factor(hospital), sd)
 plot.design(hospitalterm ~ factor(hospital))
-fit4 <- lm(hospitalterm ~ factor(hospital))
+fit4 <- lm(log(hospitalterm) ~ factor(hospital))
 summary(fit4)
 anova(fit4)
-fit4_m <- lm(hospitalterm ~ -1 + factor(hospital)) 
+fit4_m <- lm(log(hospitalterm) ~ -1 + factor(hospital)) 
 summary(fit4_m)
 anova(fit4_m)
+##Unequal variance 
+#Welch's ANOVA
+#Kruskal-Wallis test
+oneway.test(log(hospitalterm) ~ factor(hospital))
+coeftest(fit4, vcov = sandwich)
+kruskal.test(log(hospitalterm) ~ factor(hospital))
+##Multiple comparison
+fit5 <- lm(log(hospitalterm) ~ -1 + factor(hospital))
+m <- contrMat(table(hospital), type="Tukey") #define matrix of contrasts
+m
+mc <- glht(fit5, linfct = m) #general linear hypothesis
+summary(mc, test=adjusted("fdr")) #false discovery rate: less conservative
+#####Two-way ANOVA#####
+par(mfrow = c(1,1))
+plot.design(hospitalterm ~ factor(hospital) + factor(gender))
+#without interaction
+fit6 <- lm(log(hospitalterm) ~ factor(hospital) + factor(gender))
+summary(fit6)
+fit7 <- lm(log(hospitalterm) ~ factor(gender))
+anova(fit6, fit7)
+#with interaction
+fit8 <- lm(log(hospitalterm) ~ factor(hospital) * factor(gender))
+summary(fit8)
+anova(fit6, fit8)
+#then, calculate the main effects
+######ANCOVA#####
+fit9 <- lm(log(hospitalterm) ~ factor(hospital))
+fit10 <- lm(log(hospitalterm) ~ factor(hospital) + age)
+anova(fit9, fit10)
+fit11 <- lm(log(hospitalterm) ~ factor(hospital) * age)
+anova(fit9, fit10)
+#test of coincident lines
+anova(fit9, fit11)
+#test of parallel lines
+anova(fit10, fit11)
+##Prediction
+predict(fit10, new = data.frame(age = mean(age), hospital = 1), interval = "prediction")
+predict(fit10, new = data.frame(age = mean(age), hospital = 2), interval = "prediction")
+predict(fit10, new = data.frame(age = mean(age), hospital = 3), interval = "prediction")
+predict(fit10, new = data.frame(age = mean(age), hospital = 4), interval = "prediction")
+predict(fit10, new = data.frame(age = mean(age), hospital = 5), interval = "prediction")
+#####Logistic regression#####
+table(hospital, death)
+##Without regression
+chisq.test(hospital, death)
+##logistic regression
+#logit = log(odds)
+fit11 <- glm(death ~ age, family = "binomial")
+summary(fit11)
+exp(fit11$coef)
+exp(confint(fit11))
+fit12 <- glm(death ~ age + factor(hospital), family = "binomial")
+summary(fit12)
+exp(fit12$coef)
+exp(confint(fit12))
+##likelihood ratio test
+lrtest(fit11, fit12)
+##Model checking
+
+##Modified Poisson regression
+#relative risk
+fit13 <-glm(death ~ age + factor(hospital), family = "poisson")  
+coeftest(fit13, vcov = sandwich)
+exp(fit13$coef)
+##Linear regression
+#risk difference
+fit14 <- glm(death ~ age + factor(hospital), family = "gaussian")
+coeftest(fit14, vcov = sandwich)
