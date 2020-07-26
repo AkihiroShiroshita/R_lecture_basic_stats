@@ -2,9 +2,43 @@
 ###Lecture 1###########
 ###Linear regression###
 #######################
+install.packages("tidyverse")
+library(tidyverse)
+df <- read_csv("stats_data.csv", 
+               locale = locale(encoding = "SHIFT-JIS"), 
+               col_types = cols(
+                 id = col_double(),
+                 age = col_double(),
+                 gender = col_double(),
+                 steroid = col_double(),
+                 intubation = col_double(),
+                 hospitalterm = col_double(),
+                 wbc = col_double(),
+                 eosi_p = col_double(),
+                 bun = col_double(),
+                 ics = col_factor(),
+                 laba = col_factor(),
+                 lama = col_factor(),
+                 rr = col_double(),
+                 ams = col_factor(),
+                 hr = col_double(),
+                 hot = col_factor(),
+                 wheeze = col_factor(),
+                 delirium = col_factor(),
+                 stability = col_factor(),
+                 time_to_stability = col_double(),
+                 death = col_factor(),
+                 cencode = col_factor(),
+                 discharge = col_factor(),
+                 insulin = col_factor(),
+                 adl = col_factor(),
+                 hospital = col_factor()
+               ),
+               guess_max = 1500, #default: 1000
+               na = c("NA", "NULL", ".", "999", "#VALUE!", "MA", "ND", "NE"))
+df <- df %>%
+  drop_na()
 ###Regression methods using R basic functions###
-df <- read.csv("stats_data.csv", head = T) #just for simplicity. Don't do this actually. 
-df <- na.omit(df)
 attach(df)
 install.packages("multcomp")
 install.packages("lmtest")
@@ -12,13 +46,13 @@ install.packages("sandwich")
 library(multcomp)
 library(lmtest)
 library(sandwich)
-hist(hospitalterm)
-hist(log(hospitalterm))
+qplot(df$hospitalterm)
+qplot(log(df$hospitalterm))
 #####Simple linear regression######
 plot(log(hospitalterm) ~ age)
-lines(age, fit$fitted.values)
 ##Estimation
 fit <- lm(log(hospitalterm) ~ age)
+lines(age, fit$fitted.values)
 summary(fit)
 summary(fit)$r.squared
 ##Prediction of the mean vs Prediction of a new observation
@@ -93,7 +127,7 @@ fit6 <- lm(log(hospitalterm) ~ factor(hospital) + factor(gender))
 summary(fit6)
 fit7 <- lm(log(hospitalterm) ~ factor(gender))
 anova(fit6, fit7)
-#with interaction
+#With interaction
 fit8 <- lm(log(hospitalterm) ~ factor(hospital) * factor(gender))
 summary(fit8)
 anova(fit6, fit8)
@@ -131,7 +165,9 @@ exp(confint(fit12))
 ##likelihood ratio test
 lrtest(fit11, fit12)
 ##Model checking
-
+install.packages("car")
+library(car)
+crPlots(glm(death ~ age + factor(hospital), family = "binomial"))
 ##Modified Poisson regression
 #relative risk
 fit13 <-glm(death ~ age + factor(hospital), family = "poisson")  
