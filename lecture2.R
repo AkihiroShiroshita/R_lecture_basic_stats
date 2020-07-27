@@ -49,11 +49,33 @@ val.prob(predict(f3, df2, type = "fitted"), df2$death, m=50)
 #Is Hosmer-Lemeshow test is necessary? 
 ##Strong calibraition is quite important for limited numbers of predictors and they are all categorical.
 ###Discrimination
-#ROC curve:AUC, no information about prevalence, tp or fp -> no way to determine an optimal cut-off
-#IDI:Change in mean risk difference for two nested models 
-#Above average risk difference: Net benefit metrics
-##A risk model for recommended treatments
+###A risk model for recommended treatments
+baseline.model <- decision_curve(lk ~ age + gender + marker3, #fitting a logistic model
+                                 data = df2,
+                                 study.design = "cohort",
+                                 bootstraps = 50)
+plot_decision_curve(baseline.model,  curve.names = "baseline model")
+summary(baseline.model)
+#Net Benefit rather than standardized Net Benefit
+plot_decision_curve(baseline.model, standardize=F, curve.names = "baseline model")
+#Examine the potential for the new biomarker to improve Net Benefit
+full.model <- decision_curve(lk ~ age + gender + marker3 + marker4, data = df2, bootstraps = 50)
+plot_decision_curve( list(baseline.model, full.model),  curve.names = c("Baseline model", "Full model"))
 
 
-12:55 R demo
+# If the standard is biopsy, then "opt-out" decision curve is more useful
+baseline.model.optout <- decision_curve(Cancer~Age + Female + Smokes + Marker1, #fitting a logistic model
+                                        data = dcaData,
+                                        study.design = "cohort",
+                                        policy = "opt-out",
+                                        bootstraps = 50)
+plot_decision_curve(baseline.model.optout, curve.names = "baseline model", xlim=c(0, .15), ylim=c(0, 0.6))
 
+
+# in the Opt-Out formulation, examine the evidence for the new marker
+full.model.optout <- decision_curve(Cancer~Age + Female + Smokes + Marker1 + Marker2, policy="opt-out", data = dcaData, bootstraps = 50)
+plot_decision_curve( list(baseline.model.optout, full.model.optout), curve.names = c("baseline", "full"), xlim=c(0, .15), legend.position="topleft")
+# Plot ROC alternative for full model that includes biomarkers
+plot_roc_components(full.model, col = c("black", "red"))
+# Clinical Impact Plot for full model that includes biomarkers
+plot_clinical_impact(full.model, xlim = c(0, .2), col = c("black", "blue"))
